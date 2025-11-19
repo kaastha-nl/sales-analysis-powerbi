@@ -1,0 +1,43 @@
+let
+    Source = Excel.Workbook(File.Contents("C:\Users\ASUS\Downloads\Customers (1).xlsx"), null, true),
+    Customers_Sheet = Source{[Item="Customers",Kind="Sheet"]}[Data],
+    PromotedHeaders = Table.PromoteHeaders(Customers_Sheet, [PromoteAllScalars=true]),
+    ChangedTypes = Table.TransformColumnTypes(PromotedHeaders,
+        {
+            {"CustomerID", Int64.Type},
+            {"CustomerName", type text},
+            {"Region", type text},
+            {"Age", Int64.Type},
+            {"Gender", type text},
+            {"CustomerSince", type date},
+            {"Email", type text}
+        })
+in
+    ChangedTypes
+
+
+
+let
+    Source = Excel.Workbook(File.Contents("C:\Users\ASUS\Downloads\Orders.xlsx"), null, true),
+    Orders_Sheet = Source{[Item="Orders",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Orders_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"OrderID", Int64.Type}, {"CustomerID", Int64.Type}, {"ProductID", Int64.Type}, {"OrderDate", Int64.Type}, {"Quantity", Int64.Type}, {"TotalSales", type number}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"OrderDate", type date}}),
+    #"Duplicated Column" = Table.DuplicateColumn(#"Changed Type1", "OrderDate", "OrderDate - Copy"),
+    #"Split Column by Delimiter" = Table.SplitColumn(Table.TransformColumnTypes(#"Duplicated Column", {{"OrderDate - Copy", type text}}, "en-IN"), "OrderDate - Copy", Splitter.SplitTextByDelimiter("-", QuoteStyle.Csv), {"OrderDate - Copy.1", "OrderDate - Copy.2", "OrderDate - Copy.3"}),
+    #"Renamed Columns" = Table.RenameColumns(#"Split Column by Delimiter",{{"OrderDate - Copy.3", "Current Year"}, {"OrderDate - Copy.2", "Current Month"}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Renamed Columns",{"OrderDate - Copy.1"}),
+    #"Changed Type2" = Table.TransformColumnTypes(#"Removed Columns",{{"Current Month", Int64.Type}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type2", "Previous Month", each [Current Month] - 1)
+in
+    #"Added Custom"
+
+
+
+let
+    Source = Excel.Workbook(File.Contents("C:\Users\ASUS\Downloads\Products.xlsx.xlsx"), null, true),
+    Products.xlsx_Sheet = Source{[Item="Products.xlsx",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Products.xlsx_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"ProductID", Int64.Type}, {"ProductName", type text}, {"Category", type text}, {"UnitPrice", type number}, {"Supplier", type text}})
+in
+    #"Changed Type"
